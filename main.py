@@ -19,6 +19,20 @@ EMBED_MODEL_DIR = Path(__file__).resolve().parent / "embed_model"
 import argparse
 import extract_headings
 import glob
+import nltk
+
+# helper to clean unicode ligatures and smart quotes
+import unicodedata
+def clean_text(text: str) -> str:
+    # normalize to compatibility form
+    text = unicodedata.normalize('NFKC', text)
+    # replace common ligatures and smart punctuation
+    repl = {'\ufb00':'ff','\ufb01':'fi','\ufb02':'fl','\ufb03':'ffi','\ufb04':'ffl',
+            '\u201c':'"','\u201d':'"','\u2018':'\'','\u2019':'\'',
+            '\u2013':'-','\u2014':'-'}
+    for orig, r in repl.items():
+        text = text.replace(orig, r)
+    return text
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 # Remove static paths: INPUT_DIR, HEAD_JSON, OUTPUT_DIR
@@ -221,14 +235,23 @@ if __name__ == "__main__":
         sections = query_pipeline(query, records, bm25, index, id_map)
 
         # 5) Summarize subsections
-        import nltk
-        nltk.download('punkt', quiet=True)
-        nltk.download('punkt_tab', quiet=True)
         subs = []
         for s in sections:
             rec = next(r for r in records if r['doc']==s['document'] and r['page']==s['page_number'])
-            text = rec['text'].replace("\n"," ")
-            summ = " ".join(nltk.sent_tokenize(text)[:3])
+            raw = rec['text'].replace("\n", " ")
+            cleaned = clean_text(raw)
+            # remove section title prefix if present
+            title = s['section_title']
+            if title and title in cleaned:
+                # drop everything up to and including the section title
+                cleaned = cleaned.split(title, 1)[1]
+            # strip leading bullets or symbols
+            cleaned = cleaned.lstrip('•-+*◦◆◇○●■□▪▫ ')             
+            # collapse whitespace
+            cleaned = ' '.join(cleaned.split())
+            # sentence split
+            sentences = nltk.sent_tokenize(cleaned)
+            summ = " ".join(sentences[:3])
             subs.append({'document': s['document'], 'refined_text': summ, 'page_number': s['page_number']})
 
         # final JSON
