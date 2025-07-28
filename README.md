@@ -123,5 +123,5 @@ This open-source system:
 * **Diverse coverage**: enforces one section per document to avoid redundancy.
 * **Sub-60 s, CPU-only**: caches heavy steps for fast re-runs on commodity hardware.
 
-```
+
 
