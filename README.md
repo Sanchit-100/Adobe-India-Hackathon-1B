@@ -133,6 +133,9 @@ This open-source system:
 * **Sub-60 s, CPU-only**: caches heavy steps for fast re-runs on commodity hardware.
 
 ## Execution Instructions
+### Adding Input folders
+In the root directory, create an input folder. In the input folder, add all the collections (test cases), as folders in the format "Collection 1", "Collection 2" , etc.
+In each Collection folder, there is a folder named as PDFs containing all the PDFs for the test case. In addition, there needs to be a "challenge1b_input.json" file containing the detials about persona, job to be done, in the format specified. After the execution of the program, each Collection folder would get a challenge1b_output.json file containing the expected output.
 ### Sample folder structure after adding the Input Collections
 <img width="313" height="474" alt="image" src="https://github.com/user-attachments/assets/434714b2-9952-4d22-a53d-cd45f56f4838" />
 
