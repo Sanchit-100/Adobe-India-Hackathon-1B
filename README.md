@@ -46,13 +46,12 @@ This open-source system:
 
 #### 1. Extraction
 
-* Load `headings.json` mapping each PDF to its section titles and pages.
-* Use PyMuPDF to extract full-page text for every listed heading.
-* Build records:
-
+- Reuse the Round 1A heading-extraction script to parse each PDF and generate `headings.json`.  
+- Load `headings.json` (filename → section titles + page numbers).  
+- Use PyMuPDF to extract the full-page text for each heading entry.  
+- Build records of the form:
   ```json
   { "id":"file.pdf:5", "doc":"file.pdf", "page":5, "title":"Section", "text":"…" }
-  ```
 * Cache to `cache/data.json` for faster repeated runs.
 
 #### 2. Indexing
