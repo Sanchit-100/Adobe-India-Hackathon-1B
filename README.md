@@ -67,7 +67,7 @@ This open-source system:
   * Union BM25 + FAISS hits (preserving order).
   * Peak-to-peak normalize both sets into \[0,1].
   * Compute combined score: `0.6*lex + 0.4*vec`.
-* **Diversify**: pick Top-5 while skipping any document already chosen using Maximal Marginal Relevance(MMR) strategy.
+* **Diversify**: pick the Top-5 while enforcing at most one section per document (e.g., we don’t want three different recipes for the same dish) using a simple Maximal Marginal Relevance (MMR) strategy.
 * **Format**: produce entries like
 
   ```json
