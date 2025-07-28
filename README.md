@@ -81,6 +81,27 @@ This open-source system:
 
 ---
 
+## Input Format
+
+```json
+{
+  "challenge_info": {
+    "challenge_id": "round_1b_XXX",
+    "test_case_name": "specific_test_case"
+  },
+  "documents": [
+    { "filename": "doc1.pdf", "title": "Document Title 1" },
+    { "filename": "doc2.pdf", "title": "Document Title 2" }
+  ],
+  "persona": {
+    "role": "Researcher in Computational Biology"
+  },
+  "job_to_be_done": {
+    "task": "Prepare a literature review focusing on methodologies and benchmarks"
+  }
+}
+```
+
 ## Output Format
 
 ```json
