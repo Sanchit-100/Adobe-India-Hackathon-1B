@@ -13,17 +13,6 @@ Imagine drowning in a pile of PDFs—research papers, textbooks, reports—while
 
 ---
 
-Try it out
-----------
-
-```bash
-git clone https://github.com/your-org/challenge-1b.git
-cd challenge-1b
-python universal_pipeline.py
-````
-
----
-
 ## What it Does 💡
 
 #### Problem Statement
