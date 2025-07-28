@@ -137,8 +137,8 @@ This open-source system:
 <img width="313" height="474" alt="image" src="https://github.com/user-attachments/assets/434714b2-9952-4d22-a53d-cd45f56f4838" />
 
 ### Docker Commands
-1. ``` sudo docker run --rm -v "$PWD/input":/app/input 1b ```
-2. ``` sudo docker build -t 1b . ```
+1. ``` sudo docker build -t 1b . ```
+2. ``` sudo docker run --rm -v "$PWD/input":/app/input 1b ```
 
 
 
