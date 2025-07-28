@@ -124,4 +124,4 @@ This open-source system:
 * **Sub-60 s, CPU-only**: caches heavy steps for fast re-runs on commodity hardware.
 
 ```
-```
+
