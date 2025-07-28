@@ -158,75 +158,86 @@ def query_pipeline(query, records, bm25, index, id_map):
 
 # ─── MAIN ────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process multi-collection PDF analysis")
-    parser.add_argument("input_json", help="Path to challenge input JSON")
-    parser.add_argument("pdf_dir", help="Directory containing PDF documents")
-    parser.add_argument("output_json", help="Path to write challenge output JSON")
+    parser = argparse.ArgumentParser(description="Batch process collections of PDFs")
+    parser.add_argument("collections_dir", help="Directory containing one or more collection subfolders")
     parser.add_argument("--model", help="Optional model path for heading extractor", default=None)
     args = parser.parse_args()
 
-    # Load challenge configuration
-    with open(args.input_json, encoding="utf-8") as f:
-        cfg = json.load(f)
-    persona = cfg["persona"]["role"]
-    job = cfg["job_to_be_done"]["task"]
+    base_dir = Path(args.collections_dir)
+    print(f"📁 Received collections_dir: {base_dir}")
+    if base_dir.exists():
+        items = [p.name for p in base_dir.iterdir()]
+        print(f"📂 Contents of {base_dir}: {items}")
+    else:
+        print(f"❌ Path {base_dir} does not exist.")
 
-    # Prepare cache and headings paths
-    pdf_dir = args.pdf_dir
-    cache_dir = CACHE_DIR
-    Path(cache_dir).mkdir(parents=True, exist_ok=True)
-    headings_dir = Path(cache_dir) / "headings"
-    headings_dir.mkdir(parents=True, exist_ok=True)
-    combined_headings = Path(cache_dir) / "headings.json"
+    # Process each subfolder as a separate collection
+    for coll in sorted(base_dir.iterdir()):
+        if not coll.is_dir():
+            continue
+        print(f"\n=== Processing collection: {coll.name} ===")
+        # find input JSON inside collection
+        input_files = list(coll.glob("*.json"))
+        if not input_files:
+            print(f"⚠️  No JSON input in {coll}, skipping")
+            continue
+        input_json = input_files[0]
+        # derive output JSON name by replacing 'input' with 'output'
+        output_json = coll / input_json.name.replace("input", "output")
+        # PDFs directory assumed to be 'PDFs'
+        pdf_dir = coll / "PDFs"
+        if not pdf_dir.exists():
+            print(f"⚠️  No PDFs folder at {pdf_dir}, skipping")
+            continue
 
-    # Extract headings for each PDF
-    extract_headings.extract_all_headings(pdf_dir, headings_dir, args.model)
+        # Load config
+        cfg = json.load(open(input_json, encoding="utf-8"))
+        persona = cfg["persona"]["role"]
+        job = cfg["job_to_be_done"]["task"]
 
-    # Combine per-PDF heading JSONs into single mapping
-    mapping = {}
-    for js in glob.glob(str(headings_dir / "*.json")):
-        name = Path(js).stem + ".pdf"
-        mapping[name] = json.load(open(js, encoding="utf-8"))
-    with open(combined_headings, "w", encoding="utf-8") as f:
-        json.dump(mapping, f, ensure_ascii=False)
+        # Prepare cache and headings paths per collection
+        cache_dir = CACHE_DIR
+        Path(cache_dir).mkdir(parents=True, exist_ok=True)
+        headings_dir = Path(cache_dir) / f"headings_{coll.name}"
+        headings_dir.mkdir(parents=True, exist_ok=True)
+        combined_headings = Path(cache_dir) / f"headings_{coll.name}.json"
 
-    # 1) Extract records
-    records = extract_records(pdf_dir, str(combined_headings), DATA_JSON)
-    # 2) Index
-    bm25, index, id_map = build_indices(records)
-    # 3) Query
-    query = f"{persona}. {job}"
-    sections = query_pipeline(query, records, bm25, index, id_map)
+        # 1) Extract headings
+        extract_headings.extract_all_headings(pdf_dir, headings_dir, args.model)
+        # merge
+        mapping = {}
+        for js in glob.glob(str(headings_dir / "*.json")):
+            name = Path(js).stem + ".pdf"
+            mapping[name] = json.load(open(js, encoding="utf-8"))
+        with open(combined_headings, "w", encoding="utf-8") as f:
+            json.dump(mapping, f, ensure_ascii=False)
 
-    # Summaries: first 3 sentences from page text
-    import nltk
-    nltk.download("punkt", quiet=True)
-    subs = []
-    for s in sections:
-        rec = next(r for r in records if r["doc"]==s["document"] and r["page"]==s["page_number"])
-        text = rec["text"].replace("\n"," ")
-        summ = " ".join(nltk.sent_tokenize(text)[:3])
-        subs.append({
-            "document": s["document"],
-            "refined_text": summ,
-            "page_number": s["page_number"]
-        })
+        # 2) Extract records
+        records = extract_records(str(pdf_dir), str(combined_headings), DATA_JSON)
+        # 3) Index
+        bm25, index, id_map = build_indices(records)
+        # 4) Query
+        query = f"{persona}. {job}"
+        sections = query_pipeline(query, records, bm25, index, id_map)
 
-    # final JSON
-    out = {
-        "metadata": {
-            "input_documents": sorted({r["doc"] for r in records}),
-            "persona": persona,
-            "job_to_be_done": job,
-            "processing_timestamp": __import__("datetime").datetime.now().isoformat()
-        },
-        "extracted_sections": sections,
-        "subsection_analysis": subs
-    }
-    # Write output
-    out_path = Path(args.output_json)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(out, f, indent=4)
+        # 5) Summarize subsections
+        import nltk
+        nltk.download('punkt', quiet=True)
+        nltk.download('punkt_tab', quiet=True)
+        subs = []
+        for s in sections:
+            rec = next(r for r in records if r['doc']==s['document'] and r['page']==s['page_number'])
+            text = rec['text'].replace("\n"," ")
+            summ = " ".join(nltk.sent_tokenize(text)[:3])
+            subs.append({'document': s['document'], 'refined_text': summ, 'page_number': s['page_number']})
 
-    print("✅ Done →", args.output_json)
+        # final JSON
+        out = {
+            'metadata': {'input_documents': sorted({r['doc'] for r in records}),
+                         'persona': persona, 'job_to_be_done': job,
+                         'processing_timestamp': __import__('datetime').datetime.now().isoformat()},
+            'extracted_sections': sections, 'subsection_analysis': subs
+        }
+        with open(output_json, 'w', encoding="utf-8") as f:
+            json.dump(out, f, indent=4)
+        print(f"✅ Done → {output_json}")

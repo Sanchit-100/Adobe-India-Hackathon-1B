@@ -1,4 +1,5 @@
-FROM --platform=linux/amd64 python:3.10
+# Dockerfile for the 1B project
+FROM python:3.10-slim
 
 # Set working directory
 WORKDIR /app
@@ -39,7 +40,7 @@ print('✅ Classifier model loaded')
 EOF
 
 # Expose a command-line entrypoint for processing
-ENTRYPOINT ["python", "main.py"]
+ENTRYPOINT ["python", "-u", "main.py"]
 
-# Default command arguments placeholder
-CMD ["challenge1b_input.json", "Collection 1/PDFs", "challenge1b_output.json"]
+# Default placeholder: root directory of all collections (mount your host folder here)
+CMD ["/app/input"]
