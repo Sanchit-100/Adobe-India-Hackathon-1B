@@ -1,0 +1,9 @@
+numpy
+pandas
+PyMuPDF
+faiss-cpu
+sentence-transformers
+rank_bm25
+joblib
+nltk
+lightgbm
