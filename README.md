@@ -132,5 +132,13 @@ This open-source system:
 * **Diverse coverage**: enforces one section per document to avoid redundancy.
 * **Sub-60 s, CPU-only**: caches heavy steps for fast re-runs on commodity hardware.
 
+## Execution Instructions
+### Sample folder structure after adding the Input Collections
+<img width="313" height="474" alt="image" src="https://github.com/user-attachments/assets/434714b2-9952-4d22-a53d-cd45f56f4838" />
+
+### Docker Commands
+1. ``` sudo docker build -t 1b . ```
+2. ``` sudo docker run --rm -v "$PWD/input":/app/input 1b ```
+
 
 
